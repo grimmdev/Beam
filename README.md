@@ -1,3 +1,3 @@
 # Beam
-Simple, fast, secure file transfer built on Go/Fiber
+Simple, fast, secure file sharing built on Go/Fiber
 
