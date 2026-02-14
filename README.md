@@ -4,7 +4,8 @@
 > Zero-config, web-based, and fast.
 
 ![Go Version](https://img.shields.io/github/go-mod/go-version/grimmdev/beam)
-![Docker Image Size](https://img.shields.io/docker/image-size/ghcr.io/grimmdev/beam)
+![Latest Release](https://img.shields.io/github/v/release/grimmdev/beam?label=latest)
+![Build Status](https://img.shields.io/github/actions/workflow/status/grimmdev/beam/release.yml)
 ![License](https://img.shields.io/github/license/grimmdev/beam)
 
 Beam is a lightweight tool to transfer files between devices on your local network (LAN). It solves the problem of "how do I get this file from my PC to my phone/laptop/guest without using the cloud or logging into email?"
