@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beam | Simple File Transfer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#151b2e', 900: '#0f172a' },
+                        brand: { 400: '#f472b6', 500: '#ec4899', 600: '#db2777' }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Orbitron:wght@400..900&family=Quicksand:wght@300..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+    </style>
+
+    <style>
+        * {
+            font-family: "Quicksand", sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .light .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            border-color: #ec4899;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);
+            outline: none;
+        }
+
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, hsla(320, 16%, 7%, 1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(300, 39%, 20%, 1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+        }
+
+        .quicksand-700 {
+            font-optical-sizing: auto;
+            font-weight: 700;
+            font-style: normal;
+        }
+    </style>
+</head>
+
+<body class="text-slate-200 antialiased h-screen overflow-hidden flex flex-col font-sans">
+    <div class="mesh-bg"></div>
+
+    <nav class="w-full p-6 flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-brand-500/20 p-2 rounded-xl border border-brand-500/30 flex items-center justify-center">
+                <svg class="w-8 h-8 text-brand-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="5" cy="19" r="2.5" stroke="currentColor" stroke-width="2" />
+                    <circle cx="19" cy="5" r="2.5" stroke="currentColor" stroke-width="2" />
+                    <path d="M7.5 16.5L16.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M6 14L15 5" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"
+                        stroke-linecap="round" />
+                    <path d="M9 19L18 10" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"
+                        stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="h-12 flex items-center">
+                <h1 class="font-bold text-4xl tracking-tight text-white leading-none pb-1 quicksand-700">Beam</h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSettings()"
+                class="p-2 hover:bg-slate-700/50 rounded-full transition-colors text-slate-400 hover:text-white"><i
+                    data-lucide="settings" class="w-5 h-5"></i></button>
+            <div
+                class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700/50 text-xs text-slate-400">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                System: Online
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-7 glass-panel rounded-3xl p-1 shadow-2xl animate-slide-up">
+                <div class="flex p-1 bg-slate-900/50 rounded-2xl mb-1">
+                    <button onclick="switchTab('send')" id="tab-send"
+                        class="flex-1 py-3 rounded-xl text-sm font-medium transition-all duration-300 bg-slate-700 text-white shadow-lg flex items-center justify-center gap-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Send
+                    </button>
+                    <button onclick="switchTab('receive')" id="tab-receive"
+                        class="flex-1 py-3 rounded-xl text-sm font-medium transition-all duration-300 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Receive
+                    </button>
+                </div>
+
+                <div class="p-6 h-[480px] relative overflow-hidden">
+                    <div id="view-send" class="h-full flex flex-col transition-all duration-300">
+                        <div id="drop-zone"
+                            class="flex-1 border-2 border-dashed border-slate-600 rounded-2xl flex flex-col items-center justify-center gap-4 transition-all duration-300 group hover:border-brand-500 hover:bg-slate-800/30 cursor-pointer relative overflow-hidden">
+
+                            <div id="upload-prompt" class="text-center z-10 transition-all duration-300">
+                                <div
+                                    class="w-20 h-20 bg-slate-800/80 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 border border-slate-700 group-hover:border-brand-500/50 shadow-lg">
+                                    <i data-lucide="file-up"
+                                        class="w-10 h-10 text-slate-400 group-hover:text-brand-400 transition-colors"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-200">Drop file here</h3>
+                                <p class="text-sm text-slate-500 mt-1">or click to browse</p>
+                            </div>
+
+                            <div id="file-preview" class="hidden w-full px-8 z-10 animate-pop">
+                                <div
+                                    class="flex items-center gap-4 bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+                                    <div
+                                        class="w-12 h-12 rounded-lg bg-brand-500/20 flex items-center justify-center text-brand-400">
+                                        <i data-lucide="file-text" class="w-6 h-6"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 id="filename-display" class="font-medium text-slate-200 truncate">
+                                            document.pdf</h4>
+                                        <p id="filesize-display" class="text-xs text-slate-400">2.4 MB</p>
+                                    </div>
+                                    <button onclick="resetUpload()"
+                                        class="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors text-slate-500"><i
+                                            data-lucide="x" class="w-5 h-5"></i></button>
+                                </div>
+                            </div>
+                            <input type="file" id="file-input" class="absolute inset-0 opacity-0 cursor-pointer z-50"
+                                onchange="handleFileSelect(this)">
+                        </div>
+
+                        <div class="mt-6 flex flex-col gap-4">
+                            <div class="flex items-center justify-between text-xs text-slate-400 px-2">
+                                <div class="flex items-center gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer hover:text-slate-300">
+                                        <input type="checkbox" id="opt-burn"
+                                            class="accent-brand-500 rounded bg-slate-700 border-slate-600">
+                                        <span>Burn after reading (1 download)</span>
+                                    </label>
+                                </div>
+                                <select id="opt-expiry"
+                                    class="bg-transparent border-none text-slate-400 focus:ring-0 cursor-pointer hover:text-slate-200">
+                                    <option value="10m">Expires: 10 min</option>
+                                    <option value="1h" selected>Expires: 1 hour</option>
+                                    <option value="24h">Expires: 24 hours</option>
+                                </select>
+                            </div>
+                            <button id="btn-beam" onclick="performUpload()" disabled
+                                class="w-full py-4 bg-slate-800 text-slate-500 font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-not-allowed">
+                                Select a file first
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="view-success"
+                        class="absolute inset-0 bg-slate-900/95 backdrop-blur-xl z-[60] hidden flex-col items-center justify-center p-6 text-center animate-pop">
+                        <div class="w-full max-w-xs">
+                            <div class="text-brand-400 mb-2 font-mono text-sm tracking-widest uppercase">Upload Complete
+                            </div>
+                            <h2 class="text-3xl font-bold text-white mb-6">Ready to Receive</h2>
+
+                            <div class="bg-slate-800/50 border border-slate-700 rounded-2xl p-8 mb-8 relative group cursor-pointer"
+                                onclick="copyCode()">
+                                <div class="text-xs text-slate-500 uppercase tracking-wider mb-2 text-center">Transfer
+                                    PIN</div>
+                                <div id="generated-code"
+                                    class="text-6xl font-mono font-bold text-white tracking-[0.2em] group-hover:scale-105 transition-transform text-center pl-4">
+                                    ----</div>
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                                    <span class="text-white text-sm font-medium"><i data-lucide="copy"
+                                            class="inline w-4 h-4 mr-1"></i> Copy PIN</span>
+                                </div>
+                            </div>
+
+                            <p class="text-slate-400 text-sm mb-6">Enter this PIN on the receiving device.</p>
+
+                            <button onclick="resetApp()"
+                                class="text-slate-500 hover:text-white underline text-sm transition-colors">Send another
+                                file</button>
+                        </div>
+                    </div>
+
+                    <div id="view-receive" class="h-full hidden flex-col items-center justify-center relative">
+                        <div id="receive-manual"
+                            class="w-full max-w-xs text-center flex flex-col items-center animate-pop">
+                            <div class="mb-8">
+                                <div
+                                    class="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-500/20 animate-pulse">
+                                    <i data-lucide="download-cloud" class="w-10 h-10 text-brand-400"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-white">Receive File</h3>
+                                <p class="text-sm text-slate-500 mt-2">Enter the 4-digit PIN.</p>
+                            </div>
+                            <div class="flex gap-3 mb-8 justify-center">
+                                <input type="text" maxlength="4" id="code-entry" placeholder="0000"
+                                    class="glass-input w-56 h-20 text-center text-5xl font-bold rounded-xl focus:ring-2 focus:ring-brand-500/50 tracking-[0.3em] font-mono placeholder-slate-700" />
+                            </div>
+                            <button id="btn-download" onclick="checkAndDownload()"
+                                class="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg shadow-brand-600/20 transition-all duration-300 flex items-center justify-center gap-2 mb-4">
+                                <i data-lucide="download" class="w-4 h-4"></i> Retrieve File
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-6">
+                <div class="glass-panel p-6 rounded-3xl min-h-[200px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-white flex items-center gap-2"><i data-lucide="clock"
+                                class="w-4 h-4 text-brand-400"></i> Session History</h3>
+                        <button onclick="clearHistory()"
+                            class="text-xs text-slate-500 hover:text-white transition-colors">Clear</button>
+                    </div>
+                    <div class="space-y-3" id="history-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i data-lucide="check-circle" class="text-emerald-400 w-5 h-5"></i>
+        <span id="toast-msg">Operation successful</span>
+    </div>
+
+    <div id="settings-modal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-sm rounded-3xl p-6 transform scale-95 opacity-0 transition-all duration-300"
+            id="settings-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings"
+                        class="w-5 h-5 text-brand-400"></i> Settings</h2>
+                <button onclick="toggleSettings()" class="text-slate-400 hover:text-white"><i data-lucide="x"
+                        class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-6">
+                <div class="flex items-center justify-between cursor-pointer group" onclick="toggleDarkMode()">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-slate-700 rounded-lg"><i data-lucide="moon"
+                                class="w-5 h-5 text-brand-400"></i></div>
+                        <div>
+                            <h4 class="font-medium text-slate-200">Dark Mode</h4>
+                            <p class="text-xs text-slate-500">Easier on the eyes</p>
+                        </div>
+                    </div>
+                    <div class="w-12 h-7 rounded-full relative transition-colors duration-300" id="dark-toggle-bg">
+                        <div class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm"
+                            id="dark-toggle-dot"></div>
+                    </div>
+                </div>
+                <button onclick="toggleSettings()"
+                    class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let currentFile = null;
+        let isDarkMode = true;
+
+        async function performUpload() {
+            if (!currentFile) return;
+            const btn = document.getElementById('btn-beam');
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Uploading...`;
+            lucide.createIcons();
+
+            const formData = new FormData();
+            formData.append('document', currentFile);
+            formData.append('burn_after', document.getElementById('opt-burn').checked);
+            formData.append('expire_in', document.getElementById('opt-expiry').value);
+
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('view-success').classList.remove('hidden');
+                document.getElementById('view-success').classList.add('flex');
+                document.getElementById('generated-code').innerText = data.code;
+
+                addToHistory(currentFile.name, data.code);
+                showToast("File uploaded!");
+
+            } catch (err) {
+                showToast("Error: " + err.message);
+                btn.innerHTML = "Retry Upload";
+            }
+        }
+
+        async function checkAndDownload() {
+            const code = document.getElementById('code-entry').value;
+            if (code.length !== 4) return showToast("Please enter a 4-digit PIN");
+
+            const btn = document.getElementById('btn-download');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Checking...`;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch(`/api/meta/${code}`);
+                if (!res.ok) throw new Error("PIN invalid or expired");
+                const meta = await res.json();
+
+                window.location.href = `/api/download/${code}`;
+                showToast(`Downloading: ${meta.name}`);
+
+                btn.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> Started!`;
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    lucide.createIcons();
+                    document.getElementById('code-entry').value = "";
+                }, 2000);
+
+            } catch (err) {
+                showToast(err.message);
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+            }
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                currentFile = input.files[0];
+                document.getElementById('upload-prompt').classList.add('hidden');
+                document.getElementById('file-preview').classList.remove('hidden');
+                document.getElementById('filename-display').innerText = currentFile.name;
+                document.getElementById('filesize-display').innerText = (currentFile.size / 1024 / 1024).toFixed(2) + ' MB';
+                const btn = document.getElementById('btn-beam');
+                btn.disabled = false;
+                btn.classList.remove('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+                btn.classList.add('bg-brand-600', 'text-white', 'hover:bg-brand-500');
+                btn.innerHTML = `<i data-lucide="zap" class="w-5 h-5"></i> Beam It Up`;
+                lucide.createIcons();
+            }
+        }
+
+        function resetUpload() {
+            currentFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('upload-prompt').classList.remove('hidden');
+            document.getElementById('file-preview').classList.add('hidden');
+            const btn = document.getElementById('btn-beam');
+            btn.disabled = true;
+            btn.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+            btn.classList.remove('bg-brand-600', 'text-white', 'hover:bg-brand-500');
+            btn.innerHTML = `Select a file first`;
+        }
+
+        function resetApp() {
+            document.getElementById('view-success').classList.add('hidden');
+            document.getElementById('view-success').classList.remove('flex');
+            resetUpload();
+        }
+
+        function switchTab(tab) {
+            const send = document.getElementById('view-send');
+            const recv = document.getElementById('view-receive');
+            const tSend = document.getElementById('tab-send');
+            const tRecv = document.getElementById('tab-receive');
+
+            if (tab === 'send') {
+                send.classList.remove('hidden'); recv.classList.add('hidden');
+                tSend.classList.add('bg-slate-700', 'text-white', 'shadow-lg'); tSend.classList.remove('bg-transparent', 'text-slate-400');
+                tRecv.classList.remove('bg-slate-700', 'text-white', 'shadow-lg'); tRecv.classList.add('bg-transparent', 'text-slate-400');
+            } else {
+                send.classList.add('hidden'); recv.classList.remove('hidden'); recv.classList.add('flex');
+                tRecv.classList.add('bg-slate-700', 'text-white', 'shadow-lg'); tRecv.classList.remove('bg-transparent', 'text-slate-400');
+                tSend.classList.remove('bg-slate-700', 'text-white', 'shadow-lg'); tSend.classList.add('bg-transparent', 'text-slate-400');
+            }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('generated-code').innerText;
+            navigator.clipboard.writeText(code);
+            showToast("PIN copied to clipboard");
+        }
+
+        function addToHistory(name, code) {
+            const list = document.getElementById('history-list');
+            const item = `<div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 animate-slide-up"><div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i data-lucide="arrow-up" class="w-5 h-5"></i></div><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-sm font-medium text-slate-200 truncate">${name}</p><span class="text-xs font-mono text-slate-500">${code}</span></div></div></div>`;
+            list.insertAdjacentHTML('afterbegin', item);
+            lucide.createIcons();
+        }
+
+        function clearHistory() { document.getElementById('history-list').innerHTML = ''; }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            const content = document.getElementById('settings-content');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { content.classList.remove('scale-95', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10);
+            } else {
+                content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const html = document.documentElement;
+            const bg = document.getElementById('dark-toggle-bg');
+            const dot = document.getElementById('dark-toggle-dot');
+            if (isDarkMode) {
+                html.classList.add('dark'); html.classList.remove('light');
+                bg.className = "w-12 h-7 bg-brand-600 rounded-full relative transition-colors duration-300";
+                dot.style.transform = "translateX(20px)";
+            } else {
+                html.classList.remove('dark'); html.classList.add('light');
+                bg.className = "w-12 h-7 bg-slate-300 rounded-full relative transition-colors duration-300";
+                dot.style.transform = "translateX(0px)";
+            }
+        }
+
+        const dropZone = document.getElementById('drop-zone');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => dropZone.addEventListener(eName, e => { e.preventDefault(); e.stopPropagation(); }, false));
+        ['dragenter', 'dragover'].forEach(eName => dropZone.addEventListener(eName, () => dropZone.classList.add('border-brand-500', 'bg-slate-800/50'), false));
+        ['dragleave', 'drop'].forEach(eName => dropZone.addEventListener(eName, () => dropZone.classList.remove('border-brand-500', 'bg-slate-800/50'), false));
+        dropZone.addEventListener('drop', e => {
+            document.getElementById('file-input').files = e.dataTransfer.files;
+            handleFileSelect(document.getElementById('file-input'));
+        }, false);
+
+        toggleDarkMode(); toggleDarkMode();
+    </script>
+</body>
+
+</html>
