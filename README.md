@@ -14,16 +14,28 @@ Beam is a lightweight tool to transfer files between devices on your local netwo
 
 <p align="center">
   <a href="assets/images/img1.png">
-    <img src="assets/images/img1.png" width="200" style="margin: 10px;">
+    <img src="assets/images/img1.png"
+         width="220"
+         height="160"
+         style="object-fit: cover;">
   </a>
   <a href="assets/images/img2.png">
-    <img src="assets/images/img2.png" width="200" style="margin: 10px;">
+    <img src="assets/images/img2.png"
+         width="220"
+         height="160"
+         style="object-fit: cover;">
   </a>
   <a href="assets/images/img3.png">
-    <img src="assets/images/img3.png" width="200" style="margin: 10px;">
+    <img src="assets/images/img3.png"
+         width="220"
+         height="160"
+         style="object-fit: cover;">
   </a>
   <a href="assets/images/img4.png">
-    <img src="assets/images/img4.png" width="200" style="margin: 10px;">
+    <img src="assets/images/img4.png"
+         width="220"
+         height="160"
+         style="object-fit: cover;">
   </a>
 </p>
 
