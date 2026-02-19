@@ -10,6 +10,23 @@
 
 Beam is a lightweight tool to transfer files between devices on your local network (LAN). It solves the problem of "how do I get this file from my PC to my phone/laptop/guest without using the cloud or logging into email?"
 
+## 🖼️ Preview
+
+<p align="center">
+  <a href="assets/images/img1.png">
+    <img src="assets/images/img1.png" width="200" style="margin: 10px;">
+  </a>
+  <a href="assets/images/img2.png">
+    <img src="assets/images/img2.png" width="200" style="margin: 10px;">
+  </a>
+  <a href="assets/images/img3.png">
+    <img src="assets/images/img3.png" width="200" style="margin: 10px;">
+  </a>
+  <a href="assets/images/img4.png">
+    <img src="assets/images/img4.png" width="200" style="margin: 10px;">
+  </a>
+</p>
+
 ## ✨ Features
 
 * **Simple PIN System:** No QR codes or long URLs. Just a 4-digit PIN.
